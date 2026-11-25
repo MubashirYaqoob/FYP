@@ -1,0 +1,101 @@
+# GEN3D default configuration
+
+seed: 42
+
+data:
+  source: objaverse-lvis       # single dataset; class-agnostic training (model learns structure, not category)
+  target_total: 8000           # objects selected for download (expect ~7k after check + preprocess + review)
+  # Group "demo": our 4 demo categories -> ALL objects kept (GEN3D name -> LVIS names, verified 2026-11-25)
+  demo_categories:
+    chair:    [chair, armchair, folding_chair, rocking_chair, deck_chair, highchair]   # ~629
+    table:    [table, dining_table, coffee_table, kitchen_table, desk]                 # ~346
+    cup:      [cup, mug, teacup, Dixie_cup]                                            # ~235
+    cupboard: [cupboard, cabinet, wardrobe, armoire, dresser]                          # ~297
+  # Group "related": household / furniture / toys / vehicles -> boosted (related_weight per round)
+  related_categories: [sofa, sofa_bed, bench, stool, footstool, bed, bookcase, lamp, table_lamp,
+                       vase, bottle, bowl, kettle, teapot, pitcher_(vessel_for_liquid), jar, basket, crate,
+                       bucket, box, suitcase, television_set, monitor_(computer_equipment),
+                       teddy_bear, toy, car_(automobile), truck, bus_(vehicle), motorcycle, bicycle,
+                       airplane, boat, train_(railroad_vehicle)]
+  related_weight: 5
+  max_glb_mb_nondemo: 10       # 224px renders do not need 4K textures; keeps download small
+  # Group "other": every remaining LVIS category, picked round-robin (max diversity) until target_total
+  category_blacklist: [person, man, woman, girl, boy, baby, tree, plant, flower, grass, hair, wig, building,
+                       house, room, fence, curtain, flag, banner, glass, window, bubble, water, cloud, smoke,
+                       fire, map, poster, paper, napkin, towel, blanket, scarf, shirt, dress, jacket, sock,
+                       necklace, string, wire, cable, rope, net, chain]
+  unseen_holdout_categories: 40   # whole "other" categories kept out of training -> generalisation test
+  filter:
+    # Stage 1 (metadata, before download)
+    min_faces: 300           # generator does not need high-poly sources; only drop trivial boxes
+    max_faces: 500000
+    min_textures: 1
+    max_glb_mb: 60
+    allow_animated: false
+    name_blacklist: [scene, room, set, pack, collection, interior, bundle, lowpoly kit]   # NOT office/kitchen/house: they removed real chairs/tables
+    # Stage 2 (after download, geometry checks)
+    max_aspect: 50           # longest/shortest bbox side (drops flat planes / sticks)
+    highpoly_faces: 10000    # objects above this also go to the simplifier "high-poly" pool
+  raw_dir: data/raw/objaverse
+  meta_dir: data/meta
+  processed_dir: data/processed
+  split: {train: 0.8, val: 0.1, test: 0.1}
+
+render:
+  views_per_object: 16
+  resolution: 224
+  background: white
+  frame: view_centric     # targets expressed in camera frame -> no canonical orientation needed
+  lens_mm: 35             # must match scripts/render_blender.py (cam.data.lens)
+  sensor_mm: 32           # must match scripts/render_blender.py (cam.data.sensor_width)
+  inference_distance: 2.0 # camera distance assumed for real photos (renders use 1.8-2.2)
+
+occupancy:
+  grid_res: 256               # voxel grid for inside/outside (flood fill)
+  level_voxels: 0.9           # skin thickness in voxels (watertight offset)
+  voxel_surface_samples: 2000000
+  points_per_object: 100000
+  near_sigmas: [0.005, 0.02]  # sharp edges + shape context
+  near_ratios: [0.4, 0.3]     # rest (30%) uniform in the box
+  uniform_inside_min: 0.005   # below AND bulky -> flag inside_too_low (hollow by a gap)
+  bulky_max_aspect: 3         # thin things (band-aid, plane wing) are allowed to be almost empty
+  uniform_inside_max: 0.60    # above -> flag inside_too_high (enclosing dome/box)
+  surface_color_points: 50000
+
+generator:
+  encoder:
+    name: dinov2_s14      # final choice; ablations: resnet18 (pretrained), resnet18 (pretrained: false)
+    pretrained: true
+    freeze_blocks: 8
+    out_dim: 256
+    img_size: 224
+  decoder: {hidden: 256, layers: 5, pos_enc_freqs: 6}
+  texture_field: {hidden: 256, layers: 5}
+  mc_resolution: 128
+  class_agnostic: true    # no category input: the model learns 3D structure, not class labels
+  pixel_aligned: true     # local (per-pixel) image features in v1 -> needed to generalise across ~1000 categories
+
+train:
+  batch_size: 16
+  points_per_sample: 2048
+  lr: 1.0e-4
+  encoder_lr: 1.0e-5
+  epochs: 200
+  lambda_tex: 1.0
+  surface_points_per_sample: 1024
+  weight_decay: 0.0
+  grad_clip: 1.0
+  amp: true                 # mixed precision on GPU
+  num_workers: 4
+  val_every: 5
+  val_view: 0               # fixed view for validation -> comparable numbers
+  random_background: true   # half the time a random plain background (robust to real photos)
+  ckpt_dir: outputs/checkpoints
+
+simplify:
+  qem: {uv_aware: true, lock_seams: true}
+  tokenizer: {hidden: 128, out_dim: 128}
+  transformer: {layers: 4, heads: 4, dim: 128, patch_edges: 512}
+  lambda_dqem: 1.0
+  rerun_every: 0.10       # re-predict costs after every 10% of collapses
+  targets: [0.5, 0.25, 0.1]
