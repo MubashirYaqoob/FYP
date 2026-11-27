@@ -1,0 +1,90 @@
+% =====================================================================
+%  GEN3D -- FYP-1 Report (40% modules)
+%  Compile: pdflatex main -> bibtex main -> pdflatex main -> pdflatex main
+%  (or upload the whole docs/report folder to Overleaf)
+%  Fill in the placeholders in the "Project details" block below.
+% =====================================================================
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,backgrounds}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{float}
+\usepackage{listings}
+\usepackage[hidelinks]{hyperref}
+\usepackage{setspace}
+\onehalfspacing
+
+\graphicspath{{figures/}}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,frame=single,columns=fullflexible}
+
+% ---------------- Project details (fill in) ----------------
+\newcommand{\projecttitle}{GEN3D: Single-Image to Low-Poly, Texture-Preserved 3D Mesh Generation}
+\newcommand{\studentA}{Student Name 1 (Reg. No.)}
+\newcommand{\studentB}{Student Name 2 (Reg. No.)}
+\newcommand{\studentC}{Student Name 3 (Reg. No.)}
+\newcommand{\supervisor}{Supervisor Name}
+\newcommand{\degree}{Bachelor of Science in Computer Science}
+\newcommand{\university}{National University of Computer and Emerging Sciences, Peshawar Campus}
+\newcommand{\reportdate}{November 2026}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+% ------------------------------------------------------------
+
+\begin{document}
+
+% ---------------- Title page ----------------
+\begin{titlepage}
+  \centering
+  {\large \university\par}
+  \vspace{2.5cm}
+  {\LARGE\bfseries \projecttitle\par}
+  \vspace{1cm}
+  {\large Final Year Project -- Part I Report (40\% modules)\par}
+  \vspace{2cm}
+  {\large \studentA\\ \studentB\\ \studentC\par}
+  \vspace{1.5cm}
+  {\large Supervisor: \supervisor\par}
+  \vfill
+  {\large \degree\par}
+  \vspace{0.5cm}
+  {\large \reportdate\par}
+\end{titlepage}
+
+\pagenumbering{roman}
+
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\input{chapters/00_abstract}
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\clearpage
+\pagenumbering{arabic}
+
+\input{chapters/01_introduction}
+\input{chapters/02_literature}
+\input{chapters/03_methodology}
+\input{chapters/04_implementation}
+\input{chapters/05_results}
+\input{chapters/06_issues}
+\input{chapters/07_management}
+\input{chapters/08_conclusion}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

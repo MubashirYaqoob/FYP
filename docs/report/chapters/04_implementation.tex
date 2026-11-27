@@ -1,0 +1,57 @@
+\chapter{Implementation}
+
+\section{Technology Stack}
+\begin{table}[H]
+\centering
+\caption{Technologies used.}
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Area & Tools \\
+\midrule
+Language & Python 3.11 \\
+Data & Objaverse API, pandas \\
+3D processing & trimesh~\cite{trimesh}, NumPy, SciPy (KD-tree, flood fill), scikit-image (marching cubes) \\
+Rendering & Blender 4.2 LTS~\cite{blender}, Cycles on GPU \\
+Learning & PyTorch~\cite{paszke2019pytorch}, timm (DINOv2) \\
+Simplification & own QEM implementation; PyMeshLab as baseline only \\
+Demo & Gradio, rembg \\
+Compute & Kaggle notebooks (4-core CPU, 2$\times$ NVIDIA T4 GPU), Kaggle API \\
+Version control & Git, GitHub \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Code Structure}
+\begin{table}[H]
+\centering
+\caption{Main modules.}
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Path & Responsibility \\
+\midrule
+\texttt{configs/default.yaml} & every setting (filters, grid size, model, training); no hard-coded values \\
+\texttt{gen3d/data/mesh\_io.py} & load GLB, normalise, sample coloured surface points \\
+\texttt{gen3d/data/occupancy.py} & occupancy labelling (Algorithm~\ref{alg:occ}) \\
+\texttt{gen3d/data/dataset.py} & PyTorch dataset: image, camera, points; $1/\sqrt{n}$ sampler \\
+\texttt{gen3d/generator/encoder.py} & DINOv2 encoder (ResNet-18 kept for ablation) \\
+\texttt{gen3d/generator/model.py} & generator, loss, IoU \\
+\texttt{gen3d/generator/extract.py} & mesh extraction \\
+\texttt{scripts/*.py} & pipeline steps: select, download, check, preprocess, render, review, train, generate \\
+\texttt{kaggle/} & builds and pushes the Kaggle notebooks (data, render, train) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Cloud Execution on Kaggle}
+The laptop has no GPU, so all heavy work runs on Kaggle and is controlled from the laptop through the Kaggle API: the code is uploaded as a private dataset, each step is pushed as a notebook, and outputs are downloaded for inspection. Each notebook processes objects in chunks, saves every finished chunk immediately, stops before Kaggle's 12-hour limit, and resumes from where it stopped. The data notebook downloads, checks and preprocesses objects; the render notebook installs Blender, re-downloads each chunk of models, renders them with several Blender processes on two GPUs and stores each object's views as one zip file; the training notebook reads the outputs of both.
+
+\section{Coding Conventions}
+\begin{itemize}[leftmargin=*]
+  \item Modular package (\texttt{gen3d/}) separated from runnable steps (\texttt{scripts/}).
+  \item All parameters in one YAML configuration file.
+  \item Docstrings on every module and function; descriptive names.
+  \item Core algorithms (occupancy labelling, QEM, metrics) implemented by the team rather than taken from libraries.
+  \item Every step is resumable and logs its decisions to CSV files, which also serve as the data dictionary.
+\end{itemize}

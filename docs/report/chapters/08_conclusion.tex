@@ -1,0 +1,12 @@
+\chapter{Conclusion and Future Work}
+
+\section{Conclusion}
+In the first part of the project we built the data foundation and the generator of GEN3D. A class-agnostic dataset of 7{,}467 clean objects from 1{,}028 Objaverse-LVIS categories was curated, labelled with our own occupancy method and rendered with calibrated cameras. The generator, a DINOv2-based occupancy network with pixel-aligned features and a texture field, is implemented and has been shown to learn shape and colour. All heavy computation runs reproducibly on Kaggle under API control.
+
+\section{Future Work}
+\begin{itemize}[leftmargin=*]
+  \item Finish rendering the remaining objects and train the generator on the full dataset.
+  \item Implement the UV-aware QEM and compare it with PyMeshLab.
+  \item Build the Gradio demo.
+  \item FYP-2: train the D-QEM Transformer, add UV unwrapping and texture baking, run the full evaluation and ablations.
+\end{itemize}

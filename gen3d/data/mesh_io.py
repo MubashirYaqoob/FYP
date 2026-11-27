@@ -3,7 +3,7 @@
 Coordinate frame used everywhere in GEN3D: glTF frame (Y-up, as trimesh loads it),
 normalised so the object's bounding-box centre is at the origin and its longest side = 1
 (object fits in [-0.5, 0.5]^3).
-"""
+"""`
 import numpy as np
 import trimesh
 

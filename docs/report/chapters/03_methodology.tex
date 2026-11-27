@@ -1,0 +1,134 @@
+\chapter{Methodology}
+
+\section{System Overview}
+Figure~\ref{fig:pipeline} shows the GEN3D pipeline. Part A builds the training data once. Part B is the generator, trained on that data. Part C simplifies the generated mesh while keeping its texture. Part D is the demo.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 5mm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, minimum height=11mm, text width=24mm, fill=white},
+  key/.style={box, very thick, draw=blue!60!black, fill=blue!6},
+  lane/.style={draw=none, fill=gray!10, rounded corners=4pt, inner sep=3mm},
+  lab/.style={font=\footnotesize\bfseries, anchor=west},
+  arr/.style={-{Stealth[length=2mm]}, thick, gray!70!black}]
+  % lane A
+  \node[box] (a1) {Select\\Objaverse-LVIS};
+  \node[box, right=of a1] (a2) {Download\\\& check};
+  \node[box, right=of a2] (a3) {Preprocess\\occupancy + colour};
+  \node[box, right=of a3] (a4) {Render\\16 views (Blender)};
+  % lane B
+  \node[box, below=13mm of a1] (b1) {Photo\\(background removed)};
+  \node[box, right=of b1] (b2) {DINOv2 encoder\\+ pixel-aligned};
+  \node[box, right=of b2] (b3) {Occupancy decoder\\+ texture field};
+  \node[box, right=of b3] (b4) {Marching cubes\\textured mesh};
+  % lane C
+  \node[box, below=13mm of b1] (c1) {Edge features\\(UV seam, colour)};
+  \node[box, right=of c1] (c2) {Transformer\\extra cost};
+  \node[box, right=of c2] (c3) {D-QEM\\edge collapse};
+  \node[key, right=of c3] (c4) {Low-poly mesh\\texture kept};
+  \begin{scope}[on background layer]
+    \node[lane, fit=(a1)(a4)] (la) {};
+    \node[lane, fit=(b1)(b4)] (lb) {};
+    \node[lane, fit=(c1)(c4)] (lc) {};
+  \end{scope}
+  \node[lab] at ([yshift=2.5mm]la.north west) {A. Training data};
+  \node[lab] at ([yshift=2.5mm]lb.north west) {B. Generator (trained by us)};
+  \node[lab] at ([yshift=2.5mm]lc.north west) {C. Texture-aware simplification};
+  \foreach \x/\y in {a1/a2,a2/a3,a3/a4,b1/b2,b2/b3,b3/b4,c1/c2,c2/c3,c3/c4} \draw[arr] (\x) -- (\y);
+  \draw[arr] (a4.south) -- ++(0,-4mm) -| node[pos=0.25, above, font=\scriptsize]{training pairs} (b3.north);
+  \draw[arr] (b4.south) -- ++(0,-4mm) -| node[pos=0.25, above, font=\scriptsize]{high-poly mesh} (c1.north);
+\end{tikzpicture}
+\caption{GEN3D pipeline: training data (A), generator (B) and texture-aware simplification (C).}
+\label{fig:pipeline}
+\end{figure}
+
+\section{Dataset Construction}
+\subsection{Source and Class-Agnostic Selection}
+We use Objaverse~\cite{deitke2023objaverse}, a collection of about 800{,}000 3D models, restricted to its LVIS-annotated subset of 46{,}207 objects in 1{,}156 categories (LVIS vocabulary~\cite{gupta2019lvis}). Only 1{,}283 objects belong to our four demo categories, which is too few to train a generator. We therefore train \emph{class-agnostically}: the model never receives a category label and learns general 3D structure from many categories. The selection has three groups:
+\begin{itemize}[leftmargin=*]
+  \item \textbf{demo} -- every object of chair, table, cup and cupboard (and synonyms);
+  \item \textbf{related} -- furniture, household items, toys and vehicles, sampled with five times the weight;
+  \item \textbf{other} -- all remaining categories, taken round-robin so that every category contributes.
+\end{itemize}
+Forty whole categories from the \emph{other} group are held out as \texttt{test\_unseen} to measure generalisation to categories never seen in training.
+
+\subsection{Filtering}
+\begin{table}[H]
+\centering
+\caption{Filters applied before download (metadata) and after download (geometry).}
+\label{tab:filters}
+\small
+\begin{tabularx}{\textwidth}{lX}
+\toprule
+Filter & Rule and reason \\
+\midrule
+Face count & 300--500{,}000: excludes trivial boxes and very heavy files \\
+File size & $\le$ 60\,MB for demo, $\le$ 10\,MB otherwise: 224\,px renders do not need 4K textures; reduced download from 81\,GB to 28\,GB \\
+Animation & excluded: mostly rigged characters \\
+Name blacklist & scene, room, set, pack, collection, interior, bundle \\
+Category blacklist & people, plants, clothing, glass, buildings, ropes, etc. \\
+Mesh check & file must load and contain triangles; bounding-box aspect $\le 50$; ground plates flagged for review \\
+Occupancy flags & bulky object with $<0.5\%$ interior (hollow), $>60\%$ interior (enclosing dome), or colourless \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{Normalisation}
+Every object is centred at its bounding-box centre and scaled so that its longest side equals 1, placing it inside $[-0.5, 0.5]^3$. The centre and scale are stored in \texttt{norm.json} and reused by the renderer, so images and 3D labels share one coordinate frame.
+
+\section{Occupancy Labels for Non-Watertight Meshes}
+Training an occupancy network requires knowing whether a 3D point lies inside the object. Objaverse meshes are rarely watertight: a chair seat is often a single open surface. We therefore wrote our own labelling method (Algorithm~\ref{alg:occ}), following the idea behind watertight conversion tools but without native dependencies, since \texttt{mesh2sdf} could not be built on our Windows machines.
+
+\begin{algorithm}[H]
+\caption{Occupancy labelling by flood fill}
+\label{alg:occ}
+\begin{algorithmic}[1]
+\Require normalised mesh $M$, grid resolution $R=256$, skin $\ell = 0.9$ voxel
+\State $S \gets$ 2{,}000{,}000 points sampled uniformly on the surface of $M$
+\State build a KD-tree on $S$
+\State $W \gets$ voxels whose centre lies within $\ell$ of $S$ \Comment{walls without gaps}
+\State $E \gets$ flood fill of non-wall voxels starting from the grid border \Comment{exterior}
+\For{each query point $p$}
+  \State $d \gets$ distance from $p$ to nearest point of $S$ (bounded search)
+  \If{$d < \ell$} \State inside$(p) \gets$ true \Comment{within the skin}
+  \ElsIf{voxel$(p) \in E$} \State inside$(p) \gets$ false
+  \Else \State inside$(p) \gets$ not ($p$ + 1.5 voxel away from the surface $\in E$)
+  \EndIf
+\EndFor
+\end{algorithmic}
+\end{algorithm}
+
+The result is the watertight outer skin of the object, inflated by only 0.4\% of its size; thin parts become thin solid plates. Per object we store 100{,}000 labelled points (40\% near the surface with $\sigma=0.005$, 30\% with $\sigma=0.02$, 30\% uniform in the box) and 50{,}000 surface points with normals and colours read from the texture through the UV map.
+
+\section{Multi-View Rendering}
+Objaverse provides 3D models, not photographs. We create training images with Blender: a virtual camera views each object from 16 random directions (azimuth $0$--$360^\circ$, elevation $-10^\circ$ to $40^\circ$, distance 1.8--2.2) under randomised sun lighting, at $224\times224$ pixels with a transparent background. For every view we store the camera-to-world matrix and the intrinsic matrix $K$. Projecting the stored 3D surface points with these cameras places 100\% of them on the rendered object (Figure~\ref{fig:camera}), which confirms that images and labels are aligned.
+
+\section{Generator: GEN3D-Gen}
+\subsection{Architecture}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Encoder}: DINOv2 ViT-S/14~\cite{oquab2023dinov2,dosovitskiy2021vit}, pretrained. A $224\times224$ image gives a global feature and a $16\times16$ patch feature map, both projected to 256 channels. The first 8 of 12 Transformer blocks are frozen; the last 4 are fine-tuned.
+  \item \textbf{Pixel-aligned features}~\cite{saito2019pifu,xu2019disn}: each query point $p$ is projected with the camera, $u = f_x x/(-z) + c_x$, $v = c_y - f_y y/(-z)$, and the feature map is sampled bilinearly at $(u,v)$.
+  \item \textbf{Occupancy decoder}~\cite{mescheder2019onet}: a residual MLP (5 blocks, width 256) that maps the positional encoding of $p$, the global feature and the local feature to an inside logit.
+  \item \textbf{Texture field}~\cite{oechsle2019texturefields}: a second residual MLP with the same inputs that outputs RGB.
+\end{itemize}
+The model has about 9.0 million trainable parameters.
+
+\subsection{View-Centric Training}
+Objaverse objects have arbitrary orientations. We express every target in the camera's frame: points are rotated by the camera rotation, so the network always predicts the shape as seen from the input view, and the original orientation of the object does not matter.
+
+\subsection{Loss and Optimisation}
+\begin{equation}
+\mathcal{L} = \mathrm{BCE}\big(f_\theta(p, x), o(p)\big) + \lambda_{\text{tex}} \, \big\lVert c_\theta(s, x) - c(s) \big\rVert_1 ,
+\end{equation}
+where $o(p)$ is the occupancy label of point $p$ and $c(s)$ the colour of surface point $s$. Each sample uses 2{,}048 occupancy points and 1{,}024 colour points. We use AdamW with learning rate $10^{-4}$ for the decoders and $10^{-5}$ for the encoder, batch size 16 and mixed precision. To stop the largest category (chair) from dominating, objects are sampled with weight $1/\sqrt{n_c}$, where $n_c$ is the size of the object's category.
+
+\subsection{Mesh Extraction}
+The decoder is queried on a $128^3$ grid; marching cubes~\cite{lorensen1987marching} extracts the surface and the texture field colours its vertices. UV unwrapping with xatlas~\cite{xatlas} and texture baking are planned.
+
+\section{Texture-Aware Simplification}
+\subsection{QEM with UV and Seam Locking}
+Following~\cite{garland1997qem,garland1998color}, each vertex keeps a quadric over position and UV coordinates. Edges are collapsed cheapest first using a min-heap; edges on UV seams are locked or heavily penalised so that the texture does not tear.
+
+\subsection{D-QEM (planned)}
+For each edge we compute features: length, sharpness, dihedral angle, boundary flag, QEM error, UV seam flag, UV stretch, colour variance, valence and curvature. A small MLP turns them into tokens, and a Transformer encoder~\cite{vaswani2017attention} over patches of 256--512 neighbouring edges predicts an extra cost. The training label is the measured damage of collapsing that edge alone (geometric plus texture error) minus its QEM cost, so the network learns only what QEM misses. Setting $\lambda=0$ recovers plain QEM, which makes ablation straightforward.

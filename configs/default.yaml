@@ -41,6 +41,23 @@ data:
   processed_dir: data/processed
   split: {train: 0.8, val: 0.1, test: 0.1}
 
+# Second dataset: Amazon Berkeley Objects (ABO, CC BY-NC 4.0), real product models with PBR textures.
+# Added 2026-11-26 because Objaverse-LVIS has only ~520 chairs. Free download, no account.
+# GEN3D-Furniture (decided 2026-11-26): train only on 5 furniture categories, Objaverse + ABO together.
+furniture_categories: [chair, table, sofa, sofa_bed, stool, cupboard]   # sofa_bed = Objaverse's extra sofa label
+abo:
+  base_url: https://amazon-berkeley-objects.s3.amazonaws.com
+  product_types:              # ABO product_type -> our category name (5 furniture categories)
+    CHAIR: chair
+    STOOL_SEATING: stool
+    TABLE: table
+    DESK: table
+    SOFA: sofa
+    CABINET: cupboard
+    DRESSER: cupboard
+  group: demo
+  uid_prefix: abo_
+
 render:
   views_per_object: 16
   resolution: 224
@@ -90,6 +107,7 @@ train:
   val_every: 5
   val_view: 0               # fixed view for validation -> comparable numbers
   random_background: true   # half the time a random plain background (robust to real photos)
+  color_jitter: 0.0         # +- brightness/contrast/saturation change of the photo (v1: off)
   ckpt_dir: outputs/checkpoints
 
 simplify:
@@ -99,3 +117,19 @@ simplify:
   lambda_dqem: 1.0
   rerun_every: 0.10       # re-predict costs after every 10% of collapses
   targets: [0.5, 0.25, 0.1]
+
+demo:
+  models:                      # name shown in the demo -> checkpoint
+    "GEN3D-Gen v1-dining (dining chairs)": outputs/checkpoints/best_v1_dining.pt
+    "GEN3D-Gen v1-chair (chairs, stools, benches)": outputs/checkpoints/best_v1_chair.pt
+    "GEN3D-Gen v1 (general, all categories)": outputs/checkpoints/best_v1.pt
+  out_dir: outputs/demo
+  examples_dir: app/examples
+  resolutions: [64, 96, 128]   # marching-cubes grid; 64 is fast on CPU, 128 is detailed
+  default_resolution: 128
+  default_level: 0.5           # inside-probability threshold for the surface
+  default_keep: 25             # % of faces kept by the simplifier slider
+  min_part: 0.05               # clean-up: drop floating pieces smaller than 5% of the main piece
+  smooth_iters: 3              # clean-up: light Taubin smoothing (more = rounder, fewer = sharper)
+  photo_res: 640               # photo colours: resolution of the photo projected onto the mesh
+  port: 7860

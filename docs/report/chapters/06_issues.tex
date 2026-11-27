@@ -1,0 +1,37 @@
+\chapter{Technical Difficulties and Their Resolution}
+
+\begin{table}[H]
+\centering
+\caption{Problems met so far and how they were resolved.}
+\small
+\begin{tabularx}{\textwidth}{rlXX}
+\toprule
+\# & Module & Problem & Resolution \\
+\midrule
+1 & Planning & Training a large image-to-3D model needs far more compute than available & Compact occupancy network with a pretrained encoder, trained on Kaggle GPUs \\
+2 & Dataset & Only 1{,}283 objects in the four target categories & Class-agnostic training on 1{,}028 categories \\
+3 & Dataset & 81\,GB download & 10\,MB cap for non-demo objects: 28\,GB \\
+4 & Dataset & Real chairs and tables rejected by the name filter & Removed ``office'', ``kitchen'', ``house'' from the blacklist; 16 objects recovered \\
+5 & Download & Files written to the wrong folder on Windows & Own thread-based downloader \\
+6 & Preprocess & \texttt{mesh2sdf} does not build on Windows & Own occupancy algorithm \\
+7 & Preprocess & Non-watertight meshes & Flood fill from the grid border \\
+8 & Preprocess & Shapes inflated by 2.6\% & Exact distances and a $256^3$ grid: 0.4\% \\
+9 & Preprocess & 34\,s per object & Bounded nearest-neighbour search: 3\,s \\
+10 & Preprocess & Thin objects flagged as hollow & Flag only bulky objects \\
+11 & Compute & No local GPU; Colab cannot be automated & Kaggle with API control, chunked and resumable notebooks \\
+12 & Rendering & False size warning & Check on real vertices; 100\% camera alignment \\
+13 & Compute & Kaggle output too large to download file by file & Keep data on Kaggle; chain notebooks \\
+14 & Training & Sanity check stalled at loss 0.6 & More optimisation steps and a higher learning rate for the check \\
+15 & Rendering & Runs queued indefinitely & Kaggle retired the P100 default; request T4 explicitly \\
+16 & Rendering & 82 objects failed & One crashing Blender process failed its whole shard; worker now restarts and skips only the crashing object \\
+17 & Training & v1 overfitted after about 150 epochs (validation loss rising) & Weight decay 0.05 and colour augmentation; fine-tuned models no longer overfit \
+18 & Dataset & Only $\sim$520 chairs in Objaverse-LVIS & Added ABO (real product models) and ShapeNet via the ONet data \
+19 & Demo & Photos with a printed checkerboard ``transparent'' background & Background mask for light, colourless pixels with small-blob clean-up \
+20 & Demo & Upload crashed (RGBA image saved as JPEG) & Keep uploads as PNG \
+21 & Rendering & Out-of-memory crash on very large ABO models stopped a run & Retry with fewer workers; skip empty chunks \
+22 & Kaggle & Shell pipe inside a training argument (regex with \texttt{|}) & Quote arguments; syntax-check every generated notebook before pushing \
+23 & Data & 73\,GB ONet archive & Download only one category's byte range (11.4\,GB for chairs) \
+24 & Quality & Mesh colours flat and blurry & Project the photo onto the visible side of the mesh \\
+\bottomrule
+\end{tabularx}
+\end{table}

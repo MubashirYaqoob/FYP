@@ -20,3 +20,12 @@ data_seed/
 kaggle/_out/
 .vscode/
 OmniObject3D-main/
+docs/report/*.aux
+docs/report/*.log
+docs/report/*.toc
+docs/report/*.lof
+docs/report/*.lot
+docs/report/*.bbl
+docs/report/*.blg
+docs/report/*.out
+docs/report/*.synctex.gz

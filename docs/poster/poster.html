@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>GEN3D Poster</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* A1 portrait (594 × 841 mm). Layout: header band → hero flow → two stage panels → data strip → results / progress / tools */
+:root {
+  --paper: #f6f7f4; --ink: #14202e; --muted: #556270; --rule: #d5dbd8; --card: #ffffff;
+  --gen: #0e8577;      /* stage 1: generator */
+  --dq: #c9730a;       /* stage 2: D-QEM (novelty) */
+  --night: #13233a;    /* header */
+  --display: "Space Grotesk", "Segoe UI", sans-serif;
+  --body: "Inter", "Segoe UI", sans-serif;
+  --mono: "JetBrains Mono", Consolas, monospace;
+}
+@page { size: 594mm 841mm; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { width: 594mm; height: 841mm; background: var(--paper); color: var(--ink); font: 400 21pt/1.4 var(--body);
+  -webkit-print-color-adjust: exact; print-color-adjust: exact; overflow: hidden; }
+.poster { height: 100%; display: grid; grid-template-rows: auto auto auto auto auto 1fr auto; }
+.pad { padding: 0 20mm; }
+h2 { font: 700 34pt/1.1 var(--display); margin: 0 0 5mm; letter-spacing: -.01em; }
+h3 { font: 600 22pt/1.2 var(--display); margin: 0 0 2mm; }
+p { margin: 0; }
+.tag { font: 500 14pt/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
+.muted { color: var(--muted); }
+.todo { background: #fff3c4; color: #6b4e00; padding: 0 2mm; border-radius: 1.5mm; }
+
+/* header */
+header { background: var(--night); color: #eef2f6; padding: 16mm 20mm 13mm; display: grid; grid-template-columns: 1fr auto; gap: 10mm; align-items: end; }
+header h1 { font: 700 108pt/0.95 var(--display); margin: 0; letter-spacing: -.03em; }
+header h1 span { color: #6fd6c7; }
+header .sub { font: 500 30pt/1.25 var(--display); margin-top: 5mm; max-width: 360mm; color: #dfe7ee; }
+header .who { text-align: right; font-size: 17pt; line-height: 1.55; color: #c8d3dd; }
+header .who b { color: #fff; font-weight: 600; }
+
+/* hero flow */
+.hero { padding-top: 12mm; padding-bottom: 6mm; }
+.flow { display: grid; grid-template-columns: 1fr 44mm 1.25fr 44mm 1.25fr; align-items: center; background: var(--card);
+  border: 0.6mm solid var(--rule); border-radius: 5mm; padding: 9mm 10mm 7mm; }
+.step { display: grid; justify-items: center; gap: 3mm; text-align: center; }
+.step .pic { height: 78mm; width: 100%; display: grid; place-items: center; }
+.step .pic img { width: 100%; height: 78mm; object-fit: contain; }
+.step .lab { font: 600 20pt/1.2 var(--display); }
+.step .note { font: 500 14pt/1.2 var(--mono); color: var(--muted); }
+.arrow { display: grid; justify-items: center; gap: 2mm; text-align: center; }
+.arrow svg { width: 40mm; height: 14mm; }
+.arrow .who { font: 700 17pt/1.15 var(--display); }
+.arrow .what { font-size: 12.5pt; color: var(--muted); line-height: 1.25; }
+.g { color: var(--gen); } .d { color: var(--dq); }
+
+.why { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10mm; margin-top: 8mm; }
+.why div { border-top: 1.2mm solid var(--ink); padding-top: 4mm; }
+.why h3 { font-size: 23pt; }
+.why p { font-size: 18.5pt; color: #2b3745; }
+
+/* stage panels */
+.stages { display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; padding-top: 6mm; }
+.panel { background: var(--card); border-radius: 5mm; padding: 9mm 10mm; border: 0.6mm solid var(--rule); display: grid; gap: 5mm; align-content: start; }
+.panel.p1 { border-top: 3mm solid var(--gen); }
+.panel.p2 { border-top: 3mm solid var(--dq); }
+.panel .tag.g, .panel .tag.d { margin-bottom: -2mm; }
+.arch svg { width: 100%; height: auto; display: block; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4mm; }
+.fact { background: var(--paper); border-radius: 3mm; padding: 3.5mm 4mm; }
+.fact b { display: block; font: 700 25pt/1.1 var(--display); }
+.fact span { font-size: 13.5pt; color: var(--muted); line-height: 1.25; display: block; margin-top: 1mm; }
+
+.cmp { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5mm; }
+.cmp figure { margin: 0; display: grid; gap: 2mm; justify-items: center; text-align: center; }
+.cmp img { width: 100%; }
+.cmp figcaption b { display: block; font: 600 17pt/1.2 var(--display); }
+.cmp figcaption span { font-size: 13pt; color: var(--muted); }
+.cmp .bad b { color: #a3262e; } .cmp .good b { color: var(--dq); }
+.formula { background: var(--paper); border-radius: 3mm; padding: 5mm 6mm; display: grid; gap: 2.5mm; }
+.formula .eq { font: 600 27pt/1.2 var(--mono); text-align: center; }
+.formula .eq .q { color: var(--ink); } .formula .eq .t { color: var(--dq); }
+.formula ul { margin: 0; padding-left: 7mm; font-size: 16pt; line-height: 1.4; }
+.small { font-size: 12.5pt; color: var(--muted); }
+
+/* data strip */
+.data { padding-top: 10mm; display: grid; grid-template-columns: 150mm 1fr; gap: 10mm; align-items: start; }
+.funnel { display: grid; gap: 2.2mm; }
+.funnel div { display: grid; grid-template-columns: 50mm 1fr; align-items: baseline; gap: 3mm; }
+.funnel b { font: 700 27pt/1.05 var(--display); text-align: right; }
+.funnel span { font-size: 15pt; color: var(--muted); }
+.thumbs { display: grid; grid-template-columns: repeat(10, 1fr); gap: 3mm; align-items: end; background: #fff; border: 0.6mm solid var(--rule); border-radius: 5mm; padding: 7mm 7mm 4mm; }
+.thumbs figure { margin: 0; display: grid; gap: 2mm; justify-items: center; }
+.thumbs img { height: 40mm; max-width: 100%; object-fit: contain; }
+.thumbs figcaption { font: 500 11.5pt/1 var(--mono); color: var(--muted); }
+.datanote { margin-top: 4mm; font-size: 16pt; color: #2b3745; }
+
+/* bottom row */
+.bottom { padding-top: 10mm; display: grid; grid-template-columns: 1.15fr 1fr 0.9fr; gap: 10mm; align-content: start; }
+.res { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; background: #fff; border-radius: 3mm; padding: 4mm; border: 0.6mm solid var(--rule); }
+.res figure { margin: 0; text-align: center; }
+.res img { width: 100%; height: 34mm; object-fit: contain; }
+.res figcaption { font: 500 12pt/1.1 var(--mono); color: var(--muted); }
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 2mm; font-size: 16pt; line-height: 1.3; }
+.checks li { display: grid; grid-template-columns: 9mm 1fr; align-items: baseline; }
+.checks .s { font: 700 15pt/1 var(--mono); }
+.s.ok { color: var(--gen); } .s.run { color: var(--dq); } .s.next { color: var(--muted); }
+.stack { font-size: 15.5pt; line-height: 1.45; }
+.refs { font-size: 11.5pt; line-height: 1.35; color: var(--muted); margin: 3mm 0 0; padding-left: 6mm; }
+
+.evalrow { padding-top: 10mm; display: grid; grid-template-columns: 1.35fr 1fr; gap: 10mm; }
+.ev { width: 100%; border-collapse: collapse; font-size: 16pt; background: #fff; border: 0.6mm solid var(--rule); }
+.ev th { text-align: left; font: 500 12.5pt/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 4mm 5mm 3mm; border-bottom: 0.5mm solid var(--rule); }
+.ev td { padding: 3.5mm 5mm; vertical-align: top; border-bottom: 0.3mm solid var(--rule); line-height: 1.3; }
+.ev tr:last-child td { border-bottom: 0; }
+.demo { background: #fff; border: 0.6mm solid var(--rule); border-radius: 4mm; overflow: hidden; }
+.win { background: #e6eae8; padding: 2.5mm 4mm; display: flex; gap: 2mm; }
+.win span { width: 3.5mm; height: 3.5mm; border-radius: 50%; background: #b9c2bf; }
+.dbody { padding: 5mm; display: grid; grid-template-columns: 38mm 1fr; gap: 4mm; align-items: center; }
+.up { grid-row: span 2; border: 0.6mm dashed var(--muted); border-radius: 3mm; height: 40mm; display: grid; place-items: end center; text-align: center; font: 600 13pt/1.2 var(--display); color: var(--muted); background: url(img/roll_photo.png) center 30%/62% no-repeat; padding-bottom: 3mm; }
+.slider { position: relative; height: 10mm; display: flex; align-items: center; gap: 4mm; }
+.slider i { flex: 1; height: 1.6mm; border-radius: 1mm; background: linear-gradient(90deg, var(--dq) 25%, #dfe4e2 25%); }
+.slider b { position: absolute; left: calc(25% - 6mm); width: 5mm; height: 5mm; border-radius: 50%; background: var(--dq); }
+.slider em { font: 500 12.5pt/1 var(--mono); font-style: normal; color: var(--muted); }
+.views { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; }
+.views div { display: grid; gap: 1mm; justify-items: center; }
+.views img { width: 100%; }
+.views small { font: 500 11.5pt/1 var(--mono); color: var(--muted); }
+
+footer { background: var(--night); color: #c8d3dd; padding: 6mm 20mm; display: flex; justify-content: space-between; font-size: 14pt; margin-top: 8mm; }
+footer b { color: #fff; }
+</style>
+</head>
+<body>
+<div class="poster">
+
+<header>
+  <div>
+    <div class="tag" style="color:#8fb3d6">Final Year Project · Part 1</div>
+    <h1>GEN<span>3D</span></h1>
+    <p class="sub">One photo in. A light, game-ready 3D model out, with its texture kept.</p>
+  </div>
+  <div class="who">
+    <b>[Student 1]</b> · <b>[Student 2]</b> · <b>[Student 3]</b><br>
+    Supervisor: <b>[Supervisor name]</b><br>
+    [Department], [University]
+  </div>
+</header>
+
+<section class="hero pad">
+  <div class="flow">
+    <div class="step">
+      <div class="pic"><img src="img/roll_photo.png" alt="input photo"></div>
+      <div class="lab">1 · A single photo</div>
+      <div class="note">224 × 224 RGB</div>
+    </div>
+    <div class="arrow">
+      <div class="who g">GEN3D-Gen</div>
+      <svg viewBox="0 0 160 50"><line x1="4" y1="25" x2="140" y2="25" stroke="#0e8577" stroke-width="7"/><polygon points="136,8 158,25 136,42" fill="#0e8577"/></svg>
+      <div class="what">our trained<br>generator</div>
+    </div>
+    <div class="step">
+      <div class="pic"><img src="img/mesh_dense.svg" alt="dense mesh"></div>
+      <div class="lab">2 · Textured 3D mesh</div>
+      <div class="note">many triangles · heavy</div>
+    </div>
+    <div class="arrow">
+      <div class="who d">D-QEM</div>
+      <svg viewBox="0 0 160 50"><line x1="4" y1="25" x2="140" y2="25" stroke="#c9730a" stroke-width="7"/><polygon points="136,8 158,25 136,42" fill="#c9730a"/></svg>
+      <div class="what">our learned<br>simplifier</div>
+    </div>
+    <div class="step">
+      <div class="pic"><img src="img/mesh_dqem.svg" alt="low-poly mesh"></div>
+      <div class="lab">3 · Low-poly mesh</div>
+      <div class="note">few triangles · texture kept</div>
+    </div>
+  </div>
+
+  <div class="why">
+    <div><h3>The problem</h3><p>Making a 3D model by hand takes hours. Models made automatically from photos have far too many triangles for games, AR and the web.</p></div>
+    <div><h3>The usual fix fails</h3><p>Standard simplification (QEM) looks only at geometry. When it removes triangles it smears the colours, logos and edges of the texture.</p></div>
+    <div><h3>Our idea</h3><p>Train our own photo-to-3D generator, then simplify with <b>D-QEM</b>: QEM plus a Transformer that learns which edges carry texture detail.</p></div>
+  </div>
+</section>
+
+<section class="stages pad">
+  <div class="panel p1">
+    <div class="tag g">Stage 1</div>
+    <h2>GEN3D-Gen: photo → 3D</h2>
+    <div class="arch">
+      <svg viewBox="0 0 520 190" role="img" aria-label="Generator: photo to DINOv2 encoder, 3D points projected onto the image to read features, two networks predict inside or outside and colour, marching cubes builds the mesh">
+        <defs><marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" fill="#556270"/></marker></defs>
+        <g font-family="Inter, sans-serif" font-size="12.5" fill="#14202e">
+          <rect x="2" y="50" width="78" height="56" rx="7" fill="#f6f7f4" stroke="#0e8577" stroke-width="1.6"/>
+          <text x="41" y="74" text-anchor="middle" font-weight="600">Photo</text><text x="41" y="92" text-anchor="middle" font-size="10.5" fill="#556270">one view</text>
+          <rect x="108" y="50" width="110" height="56" rx="7" fill="#f6f7f4" stroke="#0e8577" stroke-width="1.6"/>
+          <text x="163" y="72" text-anchor="middle" font-weight="600">DINOv2 encoder</text><text x="163" y="90" text-anchor="middle" font-size="10.5" fill="#556270">reads the photo</text>
+          <rect x="246" y="50" width="112" height="56" rx="7" fill="#f6f7f4" stroke="#0e8577" stroke-width="1.6"/>
+          <text x="302" y="72" text-anchor="middle" font-weight="600">Pixel-aligned</text><text x="302" y="90" text-anchor="middle" font-size="10.5" fill="#556270">point → its pixel</text>
+          <rect x="246" y="140" width="112" height="34" rx="7" fill="#fff" stroke="#556270" stroke-width="1.2" stroke-dasharray="4 3"/>
+          <text x="302" y="161" text-anchor="middle" font-size="11">3D points (x, y, z)</text>
+          <rect x="388" y="16" width="128" height="50" rx="7" fill="#f6f7f4" stroke="#0e8577" stroke-width="1.6"/>
+          <text x="452" y="37" text-anchor="middle" font-weight="600">Occupancy net</text><text x="452" y="54" text-anchor="middle" font-size="10.5" fill="#556270">inside or outside?</text>
+          <rect x="388" y="90" width="128" height="50" rx="7" fill="#f6f7f4" stroke="#0e8577" stroke-width="1.6"/>
+          <text x="452" y="111" text-anchor="middle" font-weight="600">Texture field</text><text x="452" y="128" text-anchor="middle" font-size="10.5" fill="#556270">what colour?</text>
+          <text x="452" y="170" text-anchor="middle" font-size="11.5" font-weight="600">→ marching cubes</text>
+          <text x="452" y="185" text-anchor="middle" font-size="10.5" fill="#556270">builds the mesh</text>
+        </g>
+        <g stroke="#556270" stroke-width="1.5" fill="none" marker-end="url(#a1)">
+          <line x1="80" y1="78" x2="106" y2="78"/><line x1="218" y1="78" x2="244" y2="78"/>
+          <line x1="302" y1="140" x2="302" y2="108"/>
+          <line x1="358" y1="72" x2="386" y2="45"/><line x1="358" y1="84" x2="386" y2="112"/>
+          <line x1="452" y1="140" x2="452" y2="156"/>
+        </g>
+      </svg>
+    </div>
+    <p style="font-size:16.5pt">For every 3D point the model looks at the matching spot in the photo and answers two questions: <b>is this point inside the object, and what colour is it?</b> Asking this for millions of points gives the full shape.</p>
+    <div class="facts">
+      <div class="fact"><b>23.4M</b><span>parameters, 9.0M trained by us</span></div>
+      <div class="fact"><b>1,028</b><span>object categories, one class-agnostic model</span></div>
+      <div class="fact"><b>Own</b><span>labels, decoder, texture field, training</span></div>
+    </div>
+  </div>
+
+  <div class="panel p2">
+    <div class="tag d">Stage 2 · our novelty</div>
+    <h2>D-QEM: simplify, keep the texture</h2>
+    <div class="cmp">
+      <figure><img src="img/mesh_dense.svg" alt=""><figcaption><b>Original</b><span>528 triangles</span></figcaption></figure>
+      <figure class="bad"><img src="img/mesh_qem.svg" alt=""><figcaption><b>Standard QEM</b><span>16 triangles · red band smeared</span></figcaption></figure>
+      <figure class="good"><img src="img/mesh_dqem.svg" alt=""><figcaption><b>D-QEM</b><span>16 triangles · band kept sharp</span></figcaption></figure>
+    </div>
+    <div class="formula">
+      <div class="eq"><span class="q">cost(e)</span> = <span class="q">Q(e)</span> + λ · <span class="t">Δ(e)</span></div>
+      <ul>
+        <li><b>Q(e)</b>: classic QEM geometric error of collapsing edge e (UV seams locked).</li>
+        <li><b class="d">Δ(e)</b>: learned correction from a <b>Transformer</b> that reads each edge's length, curvature, UV seam and colour change.</li>
+        <li>Collapse the cheapest edge, update, repeat until 50 / 25 / 10 % of faces remain.</li>
+      </ul>
+    </div>
+    <p class="small">Concept illustration: same triangle budget for QEM and D-QEM. Real results will compare against PyMeshLab QEM.</p>
+  </div>
+</section>
+
+<section class="data pad">
+  <div>
+    <h2>Our dataset</h2>
+    <div class="funnel">
+      <div><b>8,000</b><span>Objaverse-LVIS objects downloaded</span></div>
+      <div><b>7,467</b><span>clean after our checks and filters</span></div>
+      <div><b>1,028</b><span>categories: chairs to boats</span></div>
+      <div><b>16</b><span>rendered views per object, with cameras</span></div>
+      <div><b>100k</b><span>inside/outside labels per object</span></div>
+    </div>
+  </div>
+  <div>
+    <div class="thumbs">
+      <figure><img src="img/chair.png" alt=""><figcaption>chair</figcaption></figure>
+      <figure><img src="img/table.png" alt=""><figcaption>table</figcaption></figure>
+      <figure><img src="img/mug.png" alt=""><figcaption>cup</figcaption></figure>
+      <figure><img src="img/cupboard.png" alt=""><figcaption>cupboard</figcaption></figure>
+      <figure><img src="img/teddy.png" alt=""><figcaption>teddy</figcaption></figure>
+      <figure><img src="img/jar.png" alt=""><figcaption>jar</figcaption></figure>
+      <figure><img src="img/chair2.png" alt=""><figcaption>chair</figcaption></figure>
+      <figure><img src="img/airplane.png" alt=""><figcaption>plane</figcaption></figure>
+      <figure><img src="img/moto.png" alt=""><figcaption>motorbike</figcaption></figure>
+      <figure><img src="img/sail.png" alt=""><figcaption>boat</figcaption></figure>
+    </div>
+    <p class="datanote">Rendered by us in Blender (Cycles, Kaggle GPU). Labels come from <b>our own algorithm</b>: a KD-tree finds the surface, a 256³ voxel flood fill from outside marks every point as inside or outside.</p>
+  </div>
+</section>
+
+<section class="evalrow pad">
+  <div>
+    <h2>How we will measure it</h2>
+    <table class="ev">
+      <tr><th>What</th><th>Metric</th><th>Compared with</th></tr>
+      <tr><td><b class="g">Shape</b></td><td>IoU · Chamfer distance · F-score</td><td>702 test objects + 217 from 40 categories never seen in training</td></tr>
+      <tr><td><b class="g">Texture</b></td><td>PSNR · SSIM · LPIPS on rendered views</td><td>ground-truth renders</td></tr>
+      <tr><td><b class="d">Simplification</b></td><td>same metrics at 50 / 25 / 10 % faces</td><td>Original vs PyMeshLab QEM vs our QEM vs D-QEM</td></tr>
+    </table>
+  </div>
+  <div>
+    <h2>Demo</h2>
+    <div class="demo">
+      <div class="win"><span></span><span></span><span></span></div>
+      <div class="dbody">
+        <div class="up">Upload photo</div>
+        <div class="slider"><i></i><b></b><em>faces: 25 %</em></div>
+        <div class="views">
+          <div><img src="img/mesh_dense.svg" alt=""><small>Original</small></div>
+          <div><img src="img/mesh_qem.svg" alt=""><small>QEM</small></div>
+          <div><img src="img/mesh_dqem.svg" alt=""><small>D-QEM</small></div>
+        </div>
+      </div>
+    </div>
+    <p class="small" style="margin-top:2.5mm">Upload a photo, move the slider, compare the three meshes side by side with their scores.</p>
+  </div>
+</section>
+
+<section class="bottom pad">
+  <div>
+    <h2>First results</h2>
+    <div class="res">
+      <figure><img src="img/roll_photo.png" alt=""><figcaption>input photo</figcaption></figure>
+      <figure><img src="img/roll_pred.png" alt=""><figcaption>GEN3D output</figcaption></figure>
+      <figure><img src="img/roll_gt.png" alt=""><figcaption>ground truth</figcaption></figure>
+    </div>
+    <p style="font-size:15.5pt;margin-top:3mm">Sanity test on a small set: shape and colour learned (IoU 0.67), camera alignment 100 % correct. <b>GEN3D-Gen v1</b> is now trained on 3,118 objects; <span class="todo">test IoU / Chamfer / F-score: added after evaluation</span>.</p>
+  </div>
+  <div>
+    <h2>Progress</h2>
+    <ul class="checks">
+      <li><span class="s ok">✓</span>Data pipeline: download, filter, labels</li>
+      <li><span class="s ok">✓</span>Blender renders with calibrated cameras</li>
+      <li><span class="s ok">✓</span>Generator built and verified</li>
+      <li><span class="s run">●</span>Generator v1 training and evaluation</li>
+      <li><span class="s run">●</span>UV-aware QEM baseline + demo app</li>
+      <li><span class="s next">○</span>FYP-2: D-QEM Transformer, texture baking, full comparison</li>
+    </ul>
+  </div>
+  <div>
+    <h2>Built with</h2>
+    <p class="stack">PyTorch · DINOv2 (timm) · Blender 4.2 · trimesh · SciPy · Kaggle T4 GPUs · Gradio</p>
+    <ol class="refs">
+      <li>Mescheder et al., Occupancy Networks, CVPR 2019</li>
+      <li>Saito et al., PIFu, ICCV 2019</li>
+      <li>Garland &amp; Heckbert, Surface Simplification Using QEM, SIGGRAPH 1997</li>
+      <li>Oquab et al., DINOv2, 2023</li>
+      <li>Deitke et al., Objaverse, CVPR 2023</li>
+    </ol>
+  </div>
+</section>
+
+<footer>
+  <span><b>GEN3D</b> · image → 3D → low-poly with texture preserved</span>
+  <span>github.com/MubashirYaqoob/FYP</span>
+</footer>
+
+</div>
+</body>
+</html>

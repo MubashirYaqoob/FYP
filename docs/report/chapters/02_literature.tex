@@ -1,0 +1,40 @@
+\chapter{Literature Review}
+
+\section{3D Representations}
+A learning system must choose how to represent 3D output. \emph{Voxels} are a regular 3D grid; memory grows cubically, so practical grids stay at $32^3$--$64^3$~\cite{choy2016r2n2}. \emph{Point clouds} are unordered sets of points without connectivity~\cite{fan2017psgn}. \emph{Meshes} are vertices and triangular faces, the format used by games and AR. \emph{Implicit functions} represent a shape as a function over 3D space, either occupancy~\cite{mescheder2019onet} or signed distance~\cite{park2019deepsdf}, and can be evaluated at any resolution. \emph{Radiance fields}~\cite{mildenhall2020nerf} and \emph{3D Gaussians}~\cite{kerbl2023gaussian} model appearance for photorealistic rendering.
+
+\section{Single-Image 3D Reconstruction}
+3D-R2N2~\cite{choy2016r2n2} predicted voxel grids and PSGN~\cite{fan2017psgn} predicted point clouds. Pixel2Mesh~\cite{wang2018pixel2mesh} deforms a template sphere into a mesh, which cannot create holes such as the gaps between chair legs. AtlasNet~\cite{groueix2018atlasnet} assembles surface patches that may self-intersect.
+
+Occupancy Networks~\cite{mescheder2019onet} learn a function $f_\theta(p, x) \in [0,1]$ that gives the probability that point $p$ lies inside the object seen in image $x$. The surface is a level set of $f_\theta$ and is extracted with marching cubes~\cite{lorensen1987marching}. On ShapeNet single-image reconstruction ONet reported a mean IoU of 0.571, against 0.493 for 3D-R2N2 and 0.480 for Pixel2Mesh, and the best normal consistency (0.834). It conditions the decoder only on a global image feature, which blurs fine detail. PIFu~\cite{saito2019pifu} and DISN~\cite{xu2019disn} address this with \emph{pixel-aligned} features: each 3D point is projected into the image and the local feature at that pixel is used. Texture Fields~\cite{oechsle2019texturefields} predict colour as a function over the surface.
+
+Large reconstruction models (LRM~\cite{hong2024lrm}, TripoSR~\cite{tochilkin2024triposr}, SF3D~\cite{boss2024sf3d}) use large Transformers and triplane representations trained on hundreds of thousands of objects with many GPUs. Diffusion-based methods such as Zero-1-to-3~\cite{liu2023zero123} first synthesise new views. These give the best quality but are far beyond the compute and data available to this project.
+
+\section{Mesh Simplification}
+QEM~\cite{garland1997qem} assigns each vertex a $4\times4$ quadric matrix accumulated from the planes of its adjacent faces. The cost of collapsing an edge is the quadric error at the new vertex position; edges are collapsed cheapest first using a priority queue. Garland and Heckbert extended quadrics to colour and texture coordinates~\cite{garland1998color}, and Hoppe proposed a more efficient appearance-attribute metric~\cite{hoppe1999newquadric}. Neural Mesh Simplification~\cite{potamias2022nms} learns to select points and triangles directly, but does not model UV coordinates or texture.
+
+\section{Comparison and Research Gap}
+\begin{table}[H]
+\centering
+\caption{Comparison of related methods.}
+\label{tab:related}
+\small
+\begin{tabularx}{\textwidth}{lXccc}
+\toprule
+Method & Idea & Image input & Textured output & Texture-aware low-poly \\
+\midrule
+3D-R2N2~\cite{choy2016r2n2} & Voxel grid & \checkmark & -- & -- \\
+Pixel2Mesh~\cite{wang2018pixel2mesh} & Deform sphere & \checkmark & -- & -- \\
+ONet~\cite{mescheder2019onet} & Occupancy function & \checkmark & -- & -- \\
+PIFu / DISN~\cite{saito2019pifu,xu2019disn} & Pixel-aligned implicit & \checkmark & partial & -- \\
+TripoSR / SF3D~\cite{tochilkin2024triposr,boss2024sf3d} & Large triplane model & \checkmark & \checkmark & -- \\
+QEM~\cite{garland1997qem,garland1998color} & Quadric edge collapse & -- & keeps UVs & hand-made metric \\
+Neural Mesh Simpl.~\cite{potamias2022nms} & Learned selection & -- & -- & -- \\
+\textbf{GEN3D (ours)} & Occupancy + learned QEM & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\paragraph{Gap.} Image-to-3D methods output heavy meshes, and simplification methods either ignore texture or rely on a fixed, hand-designed metric. No method in Table~\ref{tab:related} learns, from data, how much each edge collapse damages the texture, and none joins this to an image-to-3D generator. GEN3D fills this gap with D-QEM.
+
+\paragraph{Note.} A focused search of 2023--2026 work on learned and texture-aware simplification is planned before the final novelty claim. \todo{update after literature search}

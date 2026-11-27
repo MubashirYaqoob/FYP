@@ -1,0 +1,46 @@
+\chapter{Project Management}
+
+\section{Timeline}
+\begin{table}[H]
+\centering
+\caption{FYP-1 timeline and status.}
+\small
+\begin{tabularx}{\textwidth}{lXl}
+\toprule
+Phase & Work & Status \\
+\midrule
+Planning & Architecture, dataset decision, rubric mapping & Done \\
+Data & Selection, download, checks, preprocessing (7{,}467 objects) & Done \\
+Rendering & 16 views per object on Kaggle GPU & 3{,}118 done; rest scheduled \\
+Generator & Model, dataset loader, training, extraction & Implemented; training v1 \\
+Simplification & UV-aware QEM & Next \\
+Demo & Gradio interface & Next \\
+Documentation & Diagrams, SRS, test plan, report & In progress \\
+\bottomrule
+\end{tabularx}
+\end{table}
+\todo{add Gantt chart with dates}
+
+\section{Work Distribution}
+\todo{fill in names per phase: requirements, design, implementation, testing, documentation}
+
+\section{Supervisor Meetings}
+\todo{summarise weekly meetings from docs/meetings.md}
+
+\section{Risks}
+\begin{table}[H]
+\centering
+\caption{Risks and mitigations.}
+\small
+\begin{tabularx}{\textwidth}{XX}
+\toprule
+Risk & Mitigation \\
+\midrule
+Limited GPU quota (30\,h/week) & Demo objects rendered first; resumable notebooks; schedule around weekly reset \\
+Poor results on real photographs & Background removal, random backgrounds and lighting in training, DINOv2 encoder \\
+Noisy Objaverse labels and multi-object scenes & Class-agnostic training; visual review before the final run \\
+Duplicates between train and test & Embedding-based de-duplication before final evaluation \\
+Blurry texture & Project visible texture from the input image; texture baking \\
+\bottomrule
+\end{tabularx}
+\end{table}

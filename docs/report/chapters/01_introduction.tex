@@ -1,0 +1,52 @@
+\chapter{Introduction}
+
+\section{Background and Need}
+Games, AR/VR applications and e-commerce product viewers all depend on 3D models. Each model must look right, which means accurate shape and a sharp texture, and it must be light, meaning a low polygon count, so that it renders in real time on phones and headsets. Creating such assets by hand requires skilled artists and hours of work per object.
+
+Single-image 3D reconstruction promises to automate this step: a user photographs an object and receives a 3D model. Current methods, however, output dense meshes of roughly 50{,}000 to 200{,}000 faces. Reducing these meshes with conventional simplification damages their textures, because the simplification only measures geometric error.
+
+\section{Motivation: What If We Do Not Do This Project?}
+Without a tool like GEN3D, small studios, students and online sellers must either pay for manual modelling or accept heavy meshes that are slow on mobile devices. If they simplify those meshes with standard tools, they get visible texture tearing along seams. GEN3D aims to give them a light, good-looking asset from one photograph.
+
+\section{Problem Statement}
+Given a single RGB image of an object, produce a low-poly 3D mesh whose geometry and texture remain faithful to the object. Existing image-to-3D models produce high-poly meshes, and existing simplification methods reduce polygons without accounting for texture, so no available pipeline delivers both low polygon count and preserved texture from a single image.
+
+\section{Proposed Solution}
+GEN3D is a two-stage pipeline:
+\begin{enumerate}[leftmargin=*]
+  \item \textbf{Generator (image $\rightarrow$ textured high-poly mesh).} An image-conditioned occupancy network trained by us: a DINOv2 encoder, pixel-aligned features, an occupancy decoder and a texture field. Marching cubes~\cite{lorensen1987marching} extracts the mesh.
+  \item \textbf{Texture-aware simplification (high-poly $\rightarrow$ low-poly).} A QEM variant that includes UV coordinates in the quadric and locks UV seams~\cite{garland1998color}, extended by \textbf{D-QEM}, where a Transformer predicts an additional collapse cost:
+  \begin{equation}
+    \text{cost}(e) = \text{QEM}(e) + \lambda \cdot \text{Transformer}(e).
+  \end{equation}
+\end{enumerate}
+
+\section{Goals}
+\begin{itemize}[leftmargin=*]
+  \item Generate a textured 3D mesh from one photograph with a model trained by the team.
+  \item Reduce the mesh to 10--50\% of its faces while preserving texture quality better than standard QEM.
+  \item Deliver an interactive demo in which a user uploads a photo and compares original and simplified meshes.
+\end{itemize}
+
+\section{Objectives}
+\subsection{FYP-1 (40\%)}
+\begin{enumerate}[leftmargin=*]
+  \item Curate and preprocess a large, clean training dataset (done: 7{,}467 objects, 1{,}028 categories).
+  \item Render calibrated multi-view images of every object (3{,}118 objects done, remainder scheduled).
+  \item Implement and train the generator (implemented and verified; first full training run in progress).
+  \item Implement the texture-aware QEM.
+  \item Build a Gradio demo of the full pipeline.
+  \item Produce design documents and this report.
+\end{enumerate}
+\subsection{FYP-2 (60\%)}
+\begin{enumerate}[leftmargin=*]
+  \item Train the D-QEM Transformer at full scale and evaluate it against QEM baselines.
+  \item Add UV unwrapping and texture baking to generated meshes.
+  \item Run full evaluation and ablation studies; finalise the demo and thesis.
+\end{enumerate}
+
+\section{Scope}
+Input is a single RGB image of one object on a plain or removable background. Training uses Objaverse-LVIS only. Training is class-agnostic: the model receives no category label and learns general 3D structure. The demo focuses on four categories (chair, table, cup, cupboard). Scenes with many objects, transparent materials and articulated characters are out of scope.
+
+\section{Expected Results}
+At the end of the project a user uploads a photo of, for example, a chair. GEN3D shows a rotatable 3D model within seconds, and a slider reduces it to 10\% of its faces. Side by side, a standard tool's result shows torn or stretched texture, while GEN3D's result keeps the texture clean. A table under the models reports shape error (Chamfer distance) and texture error (LPIPS) for each method.

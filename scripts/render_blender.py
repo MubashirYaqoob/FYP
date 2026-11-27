@@ -10,6 +10,8 @@ Run (Windows, from the GEN folder):
   "C:\\Program Files\\Blender Foundation\\Blender 4.2\\blender.exe" -b -P scripts/render_blender.py -- --mode thumb
   "...blender.exe" -b -P scripts/render_blender.py -- --mode views --limit 5
 Options after "--":  --mode thumb|views  --limit N  --views 16  --res 224  --engine eevee|cycles|workbench
+                     --samples 32 (cycles)  --list objs.csv (uid,path,category; else data/meta CSVs)
+                     --norm-dir DIR (where <uid>/norm.json is read)  --out-dir DIR (where <uid>/views goes)
 
 Frames / conventions (must match training code)
   * Object normalisation is read from objects/<uid>/norm.json written by preprocess.py
@@ -40,17 +42,23 @@ BL_TO_GLTF = GLTF_TO_BL.inverted()
 
 def parse_args():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    a = {"mode": "thumb", "limit": 0, "views": 16, "res": 224, "engine": None}
+    a = {"mode": "thumb", "limit": 0, "views": 16, "res": 224, "engine": None, "samples": 32,
+         "list": None, "norm_dir": OBJ_DIR, "out_dir": OBJ_DIR}
     it = iter(argv)
     for k in it:
-        a[k.lstrip("-")] = next(it)
-    a["limit"], a["views"], a["res"] = int(a["limit"]), int(a["views"]), int(a["res"])
+        a[k.lstrip("-").replace("-", "_")] = next(it)
+    for k in ("limit", "views", "res", "samples"):
+        a[k] = int(a[k])
     if a["engine"] is None:
         a["engine"] = "workbench" if a["mode"] == "thumb" else "eevee"
     return a
 
 
-def object_list(limit):
+def object_list(limit, list_csv=None):
+    if list_csv:  # explicit list (Kaggle): uid, path, category
+        with open(list_csv, newline="", encoding="utf-8") as f:
+            objs = [(r["uid"], r["path"], r.get("category", "")) for r in csv.DictReader(f)]
+        return objs[:limit] if limit else objs
     with open(os.path.join(META, "checked.csv"), newline="", encoding="utf-8") as f:
         paths = {r["uid"]: (r["path"], r["category"]) for r in csv.DictReader(f) if r["status"] == "PASS"}
     with open(os.path.join(META, "preprocessed.csv"), newline="", encoding="utf-8") as f:
@@ -60,7 +68,7 @@ def object_list(limit):
 
 
 # ------------------------------------------------------------------ scene setup
-def setup_scene(engine, res):
+def setup_scene(engine, res, samples=32):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     sc = bpy.context.scene
     if engine == "eevee":
@@ -68,8 +76,9 @@ def setup_scene(engine, res):
         sc.render.engine = "BLENDER_EEVEE_NEXT" if "BLENDER_EEVEE_NEXT" in names else "BLENDER_EEVEE"
     elif engine == "cycles":
         sc.render.engine = "CYCLES"
-        sc.cycles.samples = 64
+        sc.cycles.samples = samples
         sc.cycles.use_denoising = True
+        sc.cycles.max_bounces = 4          # small renders: fewer bounces, much faster
         prefs = bpy.context.preferences.addons["cycles"].preferences
         for dev in ("OPTIX", "CUDA"):
             try:
@@ -161,10 +170,8 @@ def render_thumb(sc, cam, sun, uid, path, norm, res):
     bpy.ops.render.render(write_still=True)
 
 
-def render_views(sc, cam, sun, uid, path, norm, n_views, res):
-    vdir = os.path.join(OBJ_DIR, uid, "views")
-    if os.path.exists(os.path.join(vdir, "cameras.json")):
-        return
+def render_views(sc, cam, sun, uid, path, norm, n_views, res, out_dir=OBJ_DIR):
+    vdir = os.path.join(out_dir, uid, "views")
     os.makedirs(vdir, exist_ok=True)
     import_normalised(path, norm)
     rng = random.Random(zlib.crc32(uid.encode()))
@@ -188,18 +195,20 @@ def render_views(sc, cam, sun, uid, path, norm, n_views, res):
 
 def main():
     a = parse_args()
-    objs = object_list(a["limit"])
+    objs = object_list(a["limit"], a["list"])
     os.makedirs(THUMB_DIR, exist_ok=True)
     print(f"[GEN3D] mode={a['mode']} engine={a['engine']} objects={len(objs)}")
     for k, (uid, path, cat) in enumerate(objs):
-        with open(os.path.join(OBJ_DIR, uid, "norm.json")) as f:
-            norm = json.load(f)
+        if a["mode"] == "views" and os.path.exists(os.path.join(a["out_dir"], uid, "views", "cameras.json")):
+            continue  # already rendered (resume)
         try:
-            sc, cam, sun = setup_scene(a["engine"], 256 if a["mode"] == "thumb" else a["res"])
+            with open(os.path.join(a["norm_dir"], uid, "norm.json")) as f:
+                norm = json.load(f)
+            sc, cam, sun = setup_scene(a["engine"], 256 if a["mode"] == "thumb" else a["res"], a["samples"])
             if a["mode"] == "thumb":
                 render_thumb(sc, cam, sun, uid, path, norm, 256)
             else:
-                render_views(sc, cam, sun, uid, path, norm, a["views"], a["res"])
+                render_views(sc, cam, sun, uid, path, norm, a["views"], a["res"], a["out_dir"])
             print(f"[GEN3D] {k + 1}/{len(objs)} {cat} {uid} ok")
         except Exception as e:  # noqa: BLE001
             print(f"[GEN3D] {k + 1}/{len(objs)} {cat} {uid} FAILED: {e}")
